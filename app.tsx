@@ -68,7 +68,66 @@ span[aria-label="Unread thread succeeded"] {
 [aria-label="Thread finished"] {
   color: var(--success, #22c55e) !important;
 }
+
+@keyframes bb-session-activity-dot-1 {
+  0%, 8% { opacity: 0.15; } 22%, 78% { opacity: 1; } 92%, 100% { opacity: 0.15; }
+}
+@keyframes bb-session-activity-dot-2 {
+  0%, 26% { opacity: 0.15; } 40%, 78% { opacity: 1; } 92%, 100% { opacity: 0.15; }
+}
+@keyframes bb-session-activity-dot-3 {
+  0%, 44% { opacity: 0.15; } 58%, 78% { opacity: 1; } 92%, 100% { opacity: 0.15; }
+}
+[data-bb-sa-hidden] { display: none !important; }
+[data-bb-sa-term] .d { opacity: 0.15; }
+[data-bb-sa-term] .d1 { animation: bb-session-activity-dot-1 1.8s ease-in-out infinite; }
+[data-bb-sa-term] .d2 { animation: bb-session-activity-dot-2 1.8s ease-in-out infinite; }
+[data-bb-sa-term] .d3 { animation: bb-session-activity-dot-3 1.8s ease-in-out infinite; }
 `;
+
+const TERMINAL_LABEL = "Background command running";
+const SVG_NS = "http://www.w3.org/2000/svg";
+
+// bb draws a running background command as a static Terminal glyph. Swap it
+// for a copy whose underline is three dots that "type" one after another.
+function buildTerminal(original: Element): SVGSVGElement {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "2");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", TERMINAL_LABEL);
+  svg.setAttribute("data-bb-sa-term", "");
+  const cls = (original.getAttribute("class") ?? "")
+    .split(/\s+/)
+    .filter((c) => c && !c.startsWith("animate-"))
+    .join(" ");
+  svg.setAttribute("class", cls);
+  svg.innerHTML =
+    '<polyline points="4 17 10 11 4 5"/>' +
+    [13, 17, 21]
+      .map(
+        (cx, i) =>
+          `<circle class="d d${i + 1}" cx="${cx}" cy="18" r="1.3" fill="currentColor" stroke="none"/>`,
+      )
+      .join("");
+  return svg;
+}
+
+function enhance(root: ParentNode, added: SVGSVGElement[]) {
+  const found = root.querySelectorAll(
+    `svg[aria-label="${TERMINAL_LABEL}"]:not([data-bb-sa-term]):not([data-bb-sa-hidden])`,
+  );
+  for (const original of Array.from(found)) {
+    const copy = buildTerminal(original);
+    original.setAttribute("data-bb-sa-hidden", "");
+    original.after(copy);
+    added.push(copy);
+  }
+}
 
 export default definePluginApp((app) => {
   app.slots.experimental_appOverlay({ id: "done-checks", component: DoneChecks });
@@ -81,7 +140,25 @@ export default definePluginApp((app) => {
       style.id = STYLE_ID;
       style.textContent = CSS;
       document.head.appendChild(style);
+
+      const added: SVGSVGElement[] = [];
+      let frame = 0;
+      const scan = () => {
+        frame = 0;
+        enhance(document, added);
+      };
+      const observer = new MutationObserver(() => {
+        if (!frame) frame = requestAnimationFrame(scan);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+      scan();
       const dispose = () => {
+        observer.disconnect();
+        if (frame) cancelAnimationFrame(frame);
+        for (const copy of added) copy.remove();
+        for (const el of Array.from(document.querySelectorAll("[data-bb-sa-hidden]"))) {
+          el.removeAttribute("data-bb-sa-hidden");
+        }
         style.remove();
         setRowStatus = null;
       };
