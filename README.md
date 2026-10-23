@@ -1,13 +1,23 @@
 # bb-plugin-session-activity
 
-A BB plugin that makes session status in the sidebar easier to read.
+A [BB](https://getbb.app) plugin that makes session status in the sidebar easy to read at a glance.
 
-- Running sessions: the spinner always turns, even when the OS asks for reduced motion, with a soft breathing fade.
-- Finished, unread sessions: the grey dot becomes a green dot of the same size.
-- Finished, read sessions: a green check.
+You see which agents are working, which finished, and which run a background command, without opening them.
+
+## What it looks like
+
+- Running session: the spinner always turns, with a soft breathing fade.
 - Running background command: the console icon keeps its prompt arrow and types three dots one after another.
+- Finished, unread session: a green dot, the same size as BB's grey one.
+- Finished, read session: a green check.
 
-The colour is the theme's `--success` variable, so it follows the active BB theme.
+Open [`docs/demo-sidebar.html`](docs/demo-sidebar.html) in a browser to see all states in light and dark themes.
+
+## Why the spinner needed a fix
+
+BB draws the running spinner with `animate-spin motion-reduce:animate-none`.
+When the OS asks for reduced motion, the spinner freezes and looks like a static icon.
+This plugin keeps it turning in every setup.
 
 ## Install
 
@@ -26,12 +36,21 @@ bb plugin reload session-activity
 
 ## How it works
 
-The spinner, dots and console icon are drawn by BB and labelled with `aria-label` (`Thread working`, `Unread thread succeeded`, `Background command running`).
-The plugin injects a stylesheet that targets those labels.
-The check for read sessions uses the content-script row status setter, driven by an app overlay that reads the sidebar thread list.
-If BB renames those labels, the styles stop matching.
+BB draws the status icons and labels them with `aria-label`:
+`Thread working`, `Unread thread succeeded`, `Background command running`.
 
-The todo list above the composer lives in a separate plugin: [bb-plugin-session-todos](https://github.com/tazumi/bb-plugin-session-todos).
+- The plugin injects one stylesheet that targets those labels.
+- The console icon is replaced with a copy that has animated dots.
+A mutation observer swaps new icons as rows appear.
+- The check for read sessions uses the content-script row status setter.
+An app overlay reads the sidebar thread list and sets it on idle threads that BB draws nothing for.
+- Every colour is the theme's `--success` variable.
+
+If BB renames the labels, the styles stop matching.
+
+## Related
+
+[bb-plugin-session-todos](https://github.com/tazumi/bb-plugin-session-todos) shows the agent's todo list above the composer.
 
 ## License
 
