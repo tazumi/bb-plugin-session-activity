@@ -80,9 +80,9 @@ span[aria-label="Unread thread succeeded"] {
 }
 [data-bb-sa-hidden] { display: none !important; }
 [data-bb-sa-term] .d { opacity: 0.15; }
-[data-bb-sa-term] .d1 { animation: bb-session-activity-dot-1 1.8s ease-in-out infinite; }
-[data-bb-sa-term] .d2 { animation: bb-session-activity-dot-2 1.8s ease-in-out infinite; }
-[data-bb-sa-term] .d3 { animation: bb-session-activity-dot-3 1.8s ease-in-out infinite; }
+[data-bb-sa-term] .d1 { animation: bb-session-activity-dot-1 1.8s ease-in-out infinite !important; }
+[data-bb-sa-term] .d2 { animation: bb-session-activity-dot-2 1.8s ease-in-out infinite !important; }
+[data-bb-sa-term] .d3 { animation: bb-session-activity-dot-3 1.8s ease-in-out infinite !important; }
 `;
 
 const TERMINAL_LABEL = "Background command running";
